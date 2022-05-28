@@ -2,7 +2,7 @@
 
 约一年前了解到元学习，特别喜欢这个idea，因为“让机器学会如何学习”打破了传统机器学习的训练思维，很符合现实中人的学习过程。近期想用它研究社交网络，看了许多从实验和理论角度解释元学习有效的文章，在此梳理一下加强记忆，也希望能对他人有帮助。内容主要参考李宏毅老师2020年机器学习课程，图片截自他的ppt或自己画的。
 
-# 1、元学习介绍
+# 1 元学习介绍
 
 ## 1.1 为什么要用meta-learning
 
@@ -13,18 +13,17 @@
 ## 1.2 Meta learning概念
 
 元学习又称“learn to learn”**，学习如何去学习**，目的是成为一个拥有学习能力的学霸，而不是背题家。机器学习通过数据$D_{train}=\{{\mathbf{x},\mathbf{y}}\}$找一个函数$f^*$，希望f*(x)尽可能接近真实标签y；元学习不直接学$f^*$，而是根据数据学一个函数$F$。如图1，函数$F$能寻找到对某任务最佳的函数$f^*$，即$f^* = F(D_{train})$，以描述特征和标签之间的关系。图2说明了$F$在元学习中流程中的位置，它是learnable的，比如模型网络结构、初始化参数和学习率等超参数，可用深度学习训练。总之，**meta learning想让机器学会自己设计网络结构等配置，减少人为定义。**
+<div align=center>
+    <img src="images/mamlDef.PNG" width="500"> <br> 图1 机器学习 vs. 元学习定义
+</div>
+<br/>
 
 分类：根据F要学习的组件类型，**元学习可主要分为三类**：基于度量的方法（metric-based），基于模型的方法（model-based），基于优化的方法（optimization-based）。其中应用最广，也最适合初学的当属基于优化的MAML。
+<div align=center>
+    <img src="images/learnableComponents.PNG" width="500"> <br> 图2 元学习可学习的部件
+</div>
 
-![图1 机器学习 vs. 元学习定义](%E5%85%83%E5%AD%A6%E4%B9%A0%203974b06c7d26459e966a96c6f667f2bd/Untitled.png)
-
-图1 机器学习 vs. 元学习定义
-
-![图2 元学习可学习的部件](%E5%85%83%E5%AD%A6%E4%B9%A0%203974b06c7d26459e966a96c6f667f2bd/Untitled%201.png)
-
-图2 元学习可学习的部件
-
-# 2、元学习的建模过程——以MAML为例
+# 2 元学习的建模过程——以MAML为例
 
 ## 2.1 MAML框架
 
@@ -32,50 +31,52 @@
 
 机器学习的数据分为训练集、验证集、测试集。训练过程一般经历三步：定义一系列函数f — 设计评价函数的好坏的指标（loss） — 挑选出最好的函数f*。如图，我们熟知的梯度下降法做图像分类的流程大致是：先定义一个网络结构$f_{\theta}$如CNN —> 初始化网络参数$\theta$ —> 输入第一个batch的训练数据，计算loss —> 计算梯度 —> 更新参数 —> 下一个batch训练 —> ……，训练完毕后得到最佳参数$\hat{\theta}$，对应最佳函数为$f^{*}$ 。
 
-![机器学习过程](%E5%85%83%E5%AD%A6%E4%B9%A0%203974b06c7d26459e966a96c6f667f2bd/Untitled%202.png)
+<div align=center>
+    <img src="images/MLupdate.PNG" width="500"> <br> 图3 机器学习更新参数过程
+</div>
 
-机器学习过程
-
-![元学习总体框架](%E5%85%83%E5%AD%A6%E4%B9%A0%203974b06c7d26459e966a96c6f667f2bd/Untitled%203.png)
-
-元学习总体框架
-
-![元学习的数据以task为单位划分](%E5%85%83%E5%AD%A6%E4%B9%A0%203974b06c7d26459e966a96c6f667f2bd/Untitled%204.png)
-
-元学习的数据以task为单位划分
-
+<div align=center>
+    <img src="images/frameworkMeta.png" width="500"> <br> 图4 元学习总体框架
+</div>
+<br/>
 相比传统训练，元学习对数据的划分更有层次。它引入了task的概念，将数据装到一个个规模很小的task中，希望通过多次训练少量样本达到快速学习的目的。接下来介绍一些元学习的名词。元学习里的训练和测试阶段叫**meta-training**和**meta-testing**，其中的数据分别称为training tasks和testing tasks，也可以划分验证集即validation tasks。每一个task里又包含训练数据和测试数据，分别称为**support set**和**query set**。构建task时，**N-way，K-shot**指每个task中包含N个类别，每个类别下只有K个样本数据。如图是在做一个2-ways，1-shot的图像分类任务。一个**meta batch**包含meta_bsz个tasks，和机器学习的batch概念相似，批处理数据。3.2中会谈到batch和meta batch的区别。
+
+<div align=center>
+    <img src="images/taskSplit.PNG" width="500"> <br> 图5 元学习的数据以task为单位划分
+</div>
+<br/>
 
 所以，元学习流程是：定义网络结构$F_{\phi}$，$f_{\theta}$—> 初始化网络参数$\phi$ —> 输入第一个**meta batch**的tasks—> 在task 1上的support set计算loss和梯度，更新参数$\theta$ —> 根据query set计算$l_1$—> 训练task2 —> …… —> 对第一个meta batch的所有loss求和，计算梯度，更新参数$\phi$ —> …… —> 所有meta batch训练完毕。
 
 > 需要注意的是，因为MAML是学习模型的初始化参数，所以**元任务和子任务model strucure是一样的**。
 > 
 
-![元学习中一个task的loss计算](%E5%85%83%E5%AD%A6%E4%B9%A0%203974b06c7d26459e966a96c6f667f2bd/Untitled%205.png)
+<div align=center>
+    <img src="images/lossOneTask.PNG" width="320"> <img src="images/sumTasksLoss.PNG" width="320"> <img src="images/mamlUpdateParam.PNG" width="320"> <br> 图6 元学习中task loss的计算和梯度更新
+    </figure>
+</div>
 
-元学习中一个task的loss计算
+<!-- <div align=center>
+    <img src="images/mamlUpdateParam.PNG" width="500">   <br> 图7 MAML参数更新
+</div> -->
+<br/>
+<div align=center>
+    <img src="images/processMeta.png" width="500">   <br> 图7 元学习流程
+</div>
 
-![加总training loss](%E5%85%83%E5%AD%A6%E4%B9%A0%203974b06c7d26459e966a96c6f667f2bd/Untitled%206.png)
-
-加总training loss
-
-![元学习框架_改.png](%E5%85%83%E5%AD%A6%E4%B9%A0%203974b06c7d26459e966a96c6f667f2bd/%E5%85%83%E5%AD%A6%E4%B9%A0%E6%A1%86%E6%9E%B6_%E6%94%B9.png)
-
-![Untitled](%E5%85%83%E5%AD%A6%E4%B9%A0%203974b06c7d26459e966a96c6f667f2bd/Untitled%207.png)
-
+<br/>
 值得注意的是，**元学习与机器学习一个很大的不同是loss的计算**。如图，我们是先用training example（support set）的loss对任务网络的参数更新过一次后，再在testing examples（query set）上计算loss，用这些loss计算的梯度更新参数$\phi$，学到”learning algorithm“$F_{\phi^*}$，当要解决一个新任务时，F能得到对任务的合适函数f。而机器学习如预训练，是直接在训练数据上计算loss和梯度，学习函数f。
 
-![Untitled](%E5%85%83%E5%AD%A6%E4%B9%A0%203974b06c7d26459e966a96c6f667f2bd/Untitled%208.png)
-
-> 在更新训练任务的网络时，只fine-tune了一步，然后更新meta网络。为什么是一步，可以是多步吗？
-> 
-
-可以多步，但李宏毅老师解释了MAML只更新一次的理由：
-
-1）只更新一次，速度比较快；因为meta learning中，子任务有很多，都更新很多次，训练时间比较久。
-2）MAML希望得到的初始化参数在新的任务中finetuning的时候效果好。如果只更新一次，就可以在新任务上获取很好的表现。把这件事情当成目标，可以使得meta网络参数训练更好（目标与需求一致）
-3）具体应用时如果一次更新的效果真的不好，在测试的时候可以多更新(finetuning)几次
-4）few-shot learning的数据很少，update多次容易过拟合
+<div align=center>
+    <img src="images/lossCompare.PNG" width="500">   <br> 图8 机器学习与元学习的loss对比
+</div>
+<br/>
+在更新训练任务的网络时，只fine-tune了一步，然后更新meta网络。为什么是一步，可以是多步吗？
+> 可以多步，但李宏毅老师解释了MAML只更新一次的理由：
+> 1）只更新一次，速度比较快；因为meta learning中，子任务有很多，都更新很多次，训练时间比较久。
+> 2）MAML希望得到的初始化参数在新的任务中finetuning的时候效果好。如果只更新一次，就可以在新任务上获取很好的表现。把这件事情当成目标，可以使得meta网络参数训练更好（目标与需求一致）
+> 3）具体应用时如果一次更新的效果真的不好，在测试的时候可以多更新(finetuning)几次
+> 4）few-shot learning的数据很少，update多次容易过拟合
 
 想入门元学习和MAML还是建议看李宏毅老师[ppt](https://speech.ee.ntu.edu.tw/~tlkagk/courses/ML_2019/Lecture/Meta1%20(v6).pdf)或视频课，更详细生动，很少看到比他讲得更好的老师了。我更想分享自己的理解和整合材料，所以这一part就到此啦。
 
@@ -109,15 +110,12 @@ for iteration in range(10):
 
 而元学习和它俩的差别一是任务粒度更细，二是loss的设计更关注未来的”潜力“，而不是当前在训练数据上的表现。李宏毅老师用两张直观的图说明了迁移学习中model pre-training和meta learning的区别。可以看出，用预训练的参数初始化后续模型，难以使所有task的loss都达到最低点，**当下训练好**并不保证后续表现仍好；若用元学习，虽然它学到的参数在当前训练任务不是最佳，在子任务上微调后，都达到了各自任务的局部最优，有更**强潜力**。
 
-![预训练在当下表现好](%E5%85%83%E5%AD%A6%E4%B9%A0%203974b06c7d26459e966a96c6f667f2bd/Untitled%209.png)
 
-预训练在当下表现好
+<div align=center>
+    <img src="images/paramPretrain.PNG" width="500"> <img src="images/paramMaml.PNG" width="500">  <br> 图9 预训练在当下表现好，元学习更注重在未来表现
+</div>
 
-![元学习更注重在未来表现好（潜力大）](%E5%85%83%E5%AD%A6%E4%B9%A0%203974b06c7d26459e966a96c6f667f2bd/Untitled%2010.png)
-
-元学习更注重在未来表现好（潜力大）
-
-# 三、Deeper insight
+# 三 Deeper insight
 
 ## 3.1 类比人的学习
 
@@ -127,9 +125,9 @@ for iteration in range(10):
 
 可以看出，support set相当于平时自学做的练习题，而query set则是单元测试（往往是平时练习题的变形，表面不同但底层知识相似）。比如现在小明小红都想快速学会余弦函数的知识点，但仅已知10道余弦函数的题目及答案，怎么做到呢？小红机智地先对题目分门别类，5道当练习，5道当自我测试。结合以前的知识，她会去学习如何从题目已知信息得到正确答案。然而，她从练习中总结的规律未必是正确的，若她能在测试题上做对，我们才有理由相信她可能掌握了新知识，若平时练习过的题在测试时还错，说明做错的知识点需特别加强，这是许多学霸的自学方式。另一种做法接近机器学习的流程，小明直接从10道题中总结规律，他也许学会或背会了这10道题，但我们很难判断他是否真正掌握了知识，如果直接上考场有极大概率翻车。这就好比在分辨牛和狗的图片时，模型是根据背景为绿色的草来判断图片为牛，而不是识别出了动物本身的特征，因此背景一旦更换模型就失效了。
 
-![元学习和人类学习的类比](%E5%85%83%E5%AD%A6%E4%B9%A0%203974b06c7d26459e966a96c6f667f2bd/meta%E7%B1%BB%E6%AF%94%E4%BA%BA%E5%AD%A6%E4%B9%A0.png)
-
-元学习和人类学习的类比
+<div align=center>
+    <img src="images/metaCompHuman.png" width="600"> <br> 图10 元学习和人类学习的类比
+</div>
 
 ## 3.2 学习能力如何获得
 
@@ -152,11 +150,13 @@ for iteration in range(10):
 
 目前了解到task的划分有两种方式：support set和query set**不一样称为train-validation**，**一样的称为train-train**。在实践中，不同划分对训练结果的影响不同，具体可参见[[2]](https://www.notion.so/04d05292c1914a99bcef3e04668c0961)[[3]](https://www.notion.so/04d05292c1914a99bcef3e04668c0961)
 
-总的来说，元学习是想成为一个better learner，fit more quickly，很适合只有少量数据但想拟合更好的few-shot场景。下面的表情包完美表达我的感受hhh。
+总的来说，元学习是想成为一个better learner，fit more quickly，很适合只有少量数据但想拟合更好的few-shot场景。下面的表情包完美表达我的感受，真香现场hhh。
 
-![Untitled](%E5%85%83%E5%AD%A6%E4%B9%A0%203974b06c7d26459e966a96c6f667f2bd/Untitled%2011.png)
+<div align=center>
+    <img src="images/awsomeMaml.PNG" width="400">
+</div>
 
-以上就是元学习的概念和MAML介绍啦~主要想分享我是怎么联系以往经历理解元学习的，这样会更深刻，生活化的理解反过来也帮助我做一些直觉推断。元学习还有很多有意思的内容，比如有效性的理论分析、元学习task增强、样本不均衡的元学习等，希望自己能坚持写下去~
+以上就是元学习的概念和MAML介绍啦~ 主要想分享我是怎么联系以往经历理解元学习的，这样会更深刻，生活化的理解反过来也帮助我做一些直觉推断。元学习还有很多有意思的内容，比如有效性的理论分析、元学习task增强、样本不均衡的元学习等，希望自己能坚持写下去~
 
 # 参考文献
 
