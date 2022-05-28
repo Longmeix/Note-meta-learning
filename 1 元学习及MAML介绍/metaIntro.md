@@ -12,7 +12,7 @@
 
 ## 1.2 Meta learning概念
 
-元学习又称“learn to learn”**，学习如何去学习**，目的是成为一个拥有学习能力的学霸，而不是背题家。机器学习通过数据$D_{train}=\{{\mathbf{x},\mathbf{y}}\}$找一个函数$f^*$，希望f*(x)尽可能接近真实标签y；元学习不直接学$f^*$，而是根据数据学一个函数$F$。如图1，函数$F$能寻找到对某任务最佳的函数$f^*$，即$f^* = F(D_{train})$，以描述特征和标签之间的关系。图2说明了$F$在元学习中流程中的位置，它是learnable的，比如模型网络结构、初始化参数和学习率等超参数，可用深度学习训练。总之，**meta learning想让机器学会自己设计网络结构等配置，减少人为定义。**
+元学习又称“learn to learn”，**学习如何去学习**，目的是成为一个拥有学习能力的学霸，而不是背题家。机器学习通过数据$D_{train}=\{{\mathbf{x},\mathbf{y}}\}$找一个函数$f^* $，希望$f^{* }(x) $尽可能接近真实标签y；元学习不直接学$f^* $，而是根据数据学一个函数$F$。如图1，函数$F$能寻找到对某任务最佳的函数$f^* $，即$f^* = F(D_{train})$，以描述特征和标签之间的关系。图2说明了$F$在元学习中流程中的位置，它是learnable的，比如模型网络结构、初始化参数和学习率等超参数，可用深度学习训练。总之，**meta learning想让机器学会自己设计网络结构等配置，减少人为定义。**
 <div align=center>
     <img src="images/mamlDef.PNG" width="500"> <br> 图1 机器学习 vs. 元学习定义
 </div>
@@ -27,9 +27,9 @@
 
 ## 2.1 MAML框架
 
-权重初始化的好坏很大程度上影响模型的最终性能。  ****MAML（Model-Agnostic Meta-Learning）[[1]](https://www.notion.so/04d05292c1914a99bcef3e04668c0961) 是17年发表在ICML上的一种通用优化算法，适用于任何基于梯度学习的模型。它希望”**learning to initialize**“，为不同的任务提供初始化参数，以便面对新任务时能快速学习。
+权重初始化的好坏很大程度上影响模型的最终性能。  MAML（Model-Agnostic Meta-Learning）[[1]](https://www.notion.so/04d05292c1914a99bcef3e04668c0961) 是17年发表在ICML上的一种通用优化算法，适用于任何基于梯度学习的模型。它希望```"learning to initialize"``` ，为不同的任务提供初始化参数，以便面对新任务时能快速学习。
 
-机器学习的数据分为训练集、验证集、测试集。训练过程一般经历三步：定义一系列函数f — 设计评价函数的好坏的指标（loss） — 挑选出最好的函数f*。如图，我们熟知的梯度下降法做图像分类的流程大致是：先定义一个网络结构$f_{\theta}$如CNN —> 初始化网络参数$\theta$ —> 输入第一个batch的训练数据，计算loss —> 计算梯度 —> 更新参数 —> 下一个batch训练 —> ……，训练完毕后得到最佳参数$\hat{\theta}$，对应最佳函数为$f^{*}$ 。
+机器学习的数据分为训练集、验证集、测试集。训练过程一般经历三步：定义一系列函数f — 设计评价函数的好坏的指标（loss） — 挑选出最好的函数f*。如图，我们熟知的梯度下降法做图像分类的流程大致是：先定义一个网络结构$f_{\theta}$如CNN —> 初始化网络参数$\theta$ —> 输入第一个batch的训练数据，计算loss —> 计算梯度 —> 更新参数 —> 下一个batch训练 —> ……，训练完毕后得到最佳参数$\hat{\theta}$，对应最佳函数为$f^{* }$ 。
 
 <div align=center>
     <img src="images/MLupdate.PNG" width="500"> <br> 图3 机器学习更新参数过程
@@ -39,7 +39,8 @@
     <img src="images/frameworkMeta.png" width="500"> <br> 图4 元学习总体框架
 </div>
 <br/>
-相比传统训练，元学习对数据的划分更有层次。它引入了task的概念，将数据装到一个个规模很小的task中，希望通过多次训练少量样本达到快速学习的目的。接下来介绍一些元学习的名词。元学习里的训练和测试阶段叫**meta-training**和**meta-testing**，其中的数据分别称为training tasks和testing tasks，也可以划分验证集即validation tasks。每一个task里又包含训练数据和测试数据，分别称为**support set**和**query set**。构建task时，**N-way，K-shot**指每个task中包含N个类别，每个类别下只有K个样本数据。如图是在做一个2-ways，1-shot的图像分类任务。一个**meta batch**包含meta_bsz个tasks，和机器学习的batch概念相似，批处理数据。3.2中会谈到batch和meta batch的区别。
+
+相比传统训练，元学习对数据的划分更有层次。它引入了task的概念，将数据装到一个个规模很小的task中，希望通过多次训练少量样本达到快速学习的目的。接下来介绍一些元学习的名词。元学习里的训练和测试阶段叫```meta-training```和```meta-testing```，其中的数据分别称为training tasks和testing tasks，也可以划分验证集即validation tasks。每一个task里又包含训练数据和测试数据，分别称为```support set```和```query set```。构建task时，```N-way，K-shot```指每个task中包含N个类别，每个类别下只有K个样本数据。如图是在做一个2-ways，1-shot的图像分类任务。一个```meta batch```包含meta_bsz个tasks，和机器学习的batch概念相似，批处理数据。3.2中会谈到batch和meta batch的区别。
 
 <div align=center>
     <img src="images/taskSplit.PNG" width="500"> <br> 图5 元学习的数据以task为单位划分
@@ -63,15 +64,16 @@
 <div align=center>
     <img src="images/processMeta.png" width="500">   <br> 图7 元学习流程
 </div>
-
 <br/>
-值得注意的是，**元学习与机器学习一个很大的不同是loss的计算**。如图，我们是先用training example（support set）的loss对任务网络的参数更新过一次后，再在testing examples（query set）上计算loss，用这些loss计算的梯度更新参数$\phi$，学到”learning algorithm“$F_{\phi^*}$，当要解决一个新任务时，F能得到对任务的合适函数f。而机器学习如预训练，是直接在训练数据上计算loss和梯度，学习函数f。
+
+值得注意的是，**元学习与机器学习一个很大的不同是loss的计算**。如图，我们是先用training example（support set）的loss对任务网络的参数更新过一次后，再在testing examples（query set）上计算loss，用这些loss计算的梯度更新参数$\phi$，学到”learning algorithm“$F_{\phi^* }$，当要解决一个新任务时，F能得到对任务的合适函数f。而机器学习如预训练，是直接在训练数据上计算loss和梯度，学习函数f。
 
 <div align=center>
     <img src="images/lossCompare.PNG" width="500">   <br> 图8 机器学习与元学习的loss对比
 </div>
 <br/>
-在更新训练任务的网络时，只fine-tune了一步，然后更新meta网络。为什么是一步，可以是多步吗？
+
+**在更新训练任务的网络时，只fine-tune了一步，然后更新meta网络。为什么是一步，可以是多步吗？**
 > 可以多步，但李宏毅老师解释了MAML只更新一次的理由：
 > 1）只更新一次，速度比较快；因为meta learning中，子任务有很多，都更新很多次，训练时间比较久。
 > 2）MAML希望得到的初始化参数在新的任务中finetuning的时候效果好。如果只更新一次，就可以在新任务上获取很好的表现。把这件事情当成目标，可以使得meta网络参数训练更好（目标与需求一致）
@@ -101,9 +103,9 @@ for iteration in range(10):
 
 元学习多用在few shot和zero shot场景，在解决小样本问题上还有很多其他技术方法。与元学习概念相似的名词也很多，如迁移学习和多任务学习，刚开始接触时我很难分清它们的区别，在此做个总结。
 
-迁移学习（tansfer learning）：运用已有领域学到的知识来辅助新环境中的学习任务。新兴领域往往缺少大量训练数据，直接从头训练成本太高，而相关领域的知识学习是相似的，因此我们可以运用已有的相关知识（source domain）迁移到新的学习任务（target domain）上。比如一个人学了java，那么可以类比着尽快学会python。
+```迁移学习```（tansfer learning）：运用已有领域学到的知识来辅助新环境中的学习任务。新兴领域往往缺少大量训练数据，直接从头训练成本太高，而相关领域的知识学习是相似的，因此我们可以运用已有的相关知识（source domain）迁移到新的学习任务（target domain）上。比如一个人学了java，那么可以类比着尽快学会python。
 
-多任务学习（multi-task learning）：需要将多个任务同时学好。我们常见的机器学习方式是单任务学习与之相对，只做动物图像分类或人脸识别。而现实生活中的学习任务是有内在联系的，部分知识可以共享，例如，一位跳高运动员不仅要了解如何跳更高，还需涉及助跑，降落姿态等相关子任务内容。
+```多任务学习```（multi-task learning）：需要将多个任务同时学好。我们常见的机器学习方式是单任务学习与之相对，只做动物图像分类或人脸识别。而现实生活中的学习任务是有内在联系的，部分知识可以共享，例如，一位跳高运动员不仅要了解如何跳更高，还需涉及助跑，降落姿态等相关子任务内容。
 
 > 以上两个概念和元学习的相似之处是都利用了相似任务帮助提升泛化能力。不同之处在：迁移学习要求source domain和target domain具有相关性，否则可能会出现”negative transfer“的现象，将在电影上学到文学知识迁移到物理的学习上显然不妥。多任务学习也要求任务之间有相关性，子任务是同时训练的，因此能发掘任务间的关联和差别，起到互相促进作用。如计算机408的四门学科，计算机组成原理的知识对操作系统的学习也会有帮助。
 > 
