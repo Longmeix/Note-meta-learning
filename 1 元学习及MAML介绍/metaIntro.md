@@ -171,3 +171,4 @@ for iteration in range(10):
 4. [https://speech.ee.ntu.edu.tw/~tlkagk/courses/ML_2019/Lecture/Meta1 (v6).pdf](https://speech.ee.ntu.edu.tw/~tlkagk/courses/ML_2019/Lecture/Meta1%20(v6).pdf)
 5. [https://github.com/learnables/learn2learn](https://github.com/learnables/learn2learn)
 6. [https://zhuanlan.zhihu.com/p/136975128](https://zhuanlan.zhihu.com/p/136975128)
+7. [https://zhuanlan.zhihu.com/p/57864886](https://zhuanlan.zhihu.com/p/57864886)
